@@ -1,0 +1,77 @@
+
+name: Public API Explorer Bot
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: public-api-explorer
+  cancel-in-progress: false
+
+jobs:
+  discover-and-poll:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Run tests
+        run: python -m unittest discover -s tests -v
+
+      - name: Discover public APIs
+        run: python scripts/discover.py
+
+      - name: Notify about newly discovered APIs
+        if: success()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python scripts/notify.py
+
+      - name: Process Telegram commands
+        if: always()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python scripts/telegram_bot.py
+
+      - name: Commit API collection and offset
+        if: success()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/public-apis.json data/scan-report.json data/telegram-offset.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Update public API collection"
+            git push
+          else
+            echo "No collection changes."
+          fi
+
+      - name: Upload scan report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: public-api-scan-report
+          path: |
+            data/scan-report.json
+            data/new-apis.json
+          if-no-files-found: ignore
+          retention-days: 7
