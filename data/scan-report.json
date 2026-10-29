@@ -1,1 +1,17 @@
-[]
+{
+  "scanned_at": "2026-10-29T16:26:11+00:00",
+  "total_records": 1000,
+  "new_records": 1000,
+  "sources": [
+    {
+      "source": "Public APIs Directory",
+      "status": "success",
+      "records": 2167
+    },
+    {
+      "source": "APIs.guru",
+      "status": "failed",
+      "error": "ValueError"
+    }
+  ]
+}
