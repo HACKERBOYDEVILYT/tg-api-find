@@ -332,4 +332,10 @@ def main():
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    try:
+        raise SystemExit(main())
+    except Exception as e:
+        import traceback
+        print(f"ASOL ERROR: {e}")
+        traceback.print_exc()
+        sys.exit(1)
