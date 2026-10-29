@@ -24,6 +24,10 @@ jobs:
       - name: Install dependencies
         run: |
           pip install requests
+      - name: Fetch new Anime APIs
+        run: |
+          python scripts/fetch_anime_apis.py || true
+
 
       - name: Run notification script safely
         env:
