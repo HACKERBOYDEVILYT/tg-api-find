@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 from pathlib import Path
 
 import requests
@@ -14,22 +15,31 @@ TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
 CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "").strip()
 
 
-def main():
+def main() -> int:
     if not TOKEN or not CHAT_ID:
-        print("Telegram secrets missing; skipping notifications.")
+        print(
+            "Telegram secrets missing; skipping notifications.",
+            flush=True,
+        )
         return 0
 
     try:
-        records = (
-            json.loads(NEW_PATH.read_text(encoding="utf-8"))
-            if NEW_PATH.exists() else []
-        )
-    except (json.JSONDecodeError, OSError):
-        print("Could not read new API records.")
-        return 0
+        if not NEW_PATH.exists():
+            print(f"No new API file found: {NEW_PATH}", flush=True)
+            return 0
+
+        records = json.loads(NEW_PATH.read_text(encoding="utf-8"))
+
+        if not isinstance(records, list):
+            print("ERROR: new-apis.json must contain a JSON list.")
+            return 1
+
+    except (json.JSONDecodeError, OSError) as exc:
+        print(f"ERROR reading new-apis.json: {exc}", flush=True)
+        return 1
 
     if not records:
-        print("No newly discovered APIs.")
+        print("No newly discovered APIs.", flush=True)
         return 0
 
     session = requests.Session()
@@ -37,18 +47,25 @@ def main():
         "User-Agent": "PublicAPIExplorerBot/1.0"
     })
 
-    for item in records[:30]:
+    sent = 0
+
+    for index, item in enumerate(records[:30], start=1):
+        if not isinstance(item, dict):
+            print(f"Skipping invalid record #{index}.", flush=True)
+            continue
+
         name = str(item.get("name") or "Unnamed API")[:200]
         category = str(item.get("category") or "Uncategorized")[:150]
         purpose = str(
             item.get("purpose") or "Description unavailable"
-        ).replace("<", "&lt;").replace(">", "&gt;")[:500]
+        )
+        purpose = purpose.replace("<", "&lt;").replace(">", "&gt;")[:500]
 
-        docs = (
+        docs = str(
             item.get("documentation_url")
             or item.get("spec_url")
             or "Not available"
-        )
+        )[:1000]
 
         message = (
             "🆕 New public API discovered\n\n"
@@ -60,28 +77,55 @@ def main():
             f"Docs: {docs}"
         )
 
-        response = session.post(
-            f"https://api.telegram.org/bot{TOKEN}/sendMessage",
-            json={
-                "chat_id": CHAT_ID,
-                "text": message,
-                "disable_web_page_preview": True
-            },
-            timeout=20
-        )
+        try:
+            response = session.post(
+                f"https://api.telegram.org/bot{TOKEN}/sendMessage",
+                json={
+                    "chat_id": CHAT_ID,
+                    "text": message,
+                    "disable_web_page_preview": True,
+                },
+                timeout=20,
+            )
 
-        response.raise_for_status()
+            try:
+                result = response.json()
+            except ValueError:
+                result = {}
 
-        if not response.json().get("ok"):
-            raise RuntimeError("Telegram rejected the notification")
+            if not response.ok or not result.get("ok"):
+                description = str(
+                    result.get("description", "No Telegram error details")
+                )
+                print(
+                    f"Telegram API error for record #{index}: "
+                    f"HTTP {response.status_code}; {description}",
+                    flush=True,
+                )
+                return 1
+
+            sent += 1
+            print(f"Notification sent: {name}", flush=True)
+
+        except requests.RequestException as exc:
+            # Do not print request URLs because they contain the bot token.
+            print(
+                f"Network/request error for record #{index}: "
+                f"{type(exc).__name__}: {exc}",
+                flush=True,
+            )
+            return 1
+
+    print(f"Notifications sent: {sent}", flush=True)
 
     if len(records) > 30:
         print(
-            f"Sent 30 notifications out of {len(records)} new records."
+            f"Remaining records not sent: {len(records) - 30}",
+            flush=True,
         )
 
     return 0
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    sys.exit(main())
