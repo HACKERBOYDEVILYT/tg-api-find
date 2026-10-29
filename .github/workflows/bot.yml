@@ -2,7 +2,7 @@ name: Run Telegram Bot & Notifications
 
 on:
   schedule:
-    - cron: '0 * * * *' # প্রতি ১ ঘণ্টা পর পর রান করবে
+    - cron: '5 * * * *' # প্রতি 5 min পর পর রান করবে
   workflow_dispatch: # ম্যানুয়ালি রান করার অপশন
 
 jobs:
