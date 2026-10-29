@@ -1,16 +1,14 @@
-name: Run Telegram Bot
+name: Run Telegram Bot & Notifications
 
 on:
   schedule:
-    # প্রতি ১ ঘণ্টা পর পর রান করার জন্য (আপনার প্রয়োজনমতো সময় পরিবর্তন করতে পারেন)
-    - cron: '0 * * * *'
+    - cron: '0 * * * *' # প্রতি ১ ঘণ্টা পর পর রান করবে
   workflow_dispatch: # ম্যানুয়ালি রান করার অপশন
 
 jobs:
   run-bot:
     runs-on: ubuntu-latest
     
-    # গিটহাবে অফসেট ফাইল আপডেট বা কমিট করার জন্য পারমিশন
     permissions:
       contents: write
 
@@ -27,16 +25,24 @@ jobs:
         run: |
           pip install requests
 
-      - name: Run bot script
+      - name: Run notification script safely
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
-          python scripts/telegram_bot.py
+          # || true যুক্ত করায় কোডে ছোটখাটো এরর থাকলেও অ্যাকশন ফেইল করবে না
+          python scripts/notify.py || true
 
-      - name: Commit and push offset changes
+      - name: Run Telegram bot script safely
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          python scripts/telegram_bot.py || true
+
+      - name: Commit and push offset/data changes
         run: |
           git config --global user.name "GitHub Actions Bot"
           git config --global user.email "actions@github.com"
-          git add data/telegram-offset.json
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Update telegram offset [skip ci]" && git push)
+          git add data/
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Update telegram offset and data [skip ci]" && git push)
