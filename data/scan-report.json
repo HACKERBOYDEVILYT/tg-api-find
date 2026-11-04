@@ -1,12 +1,12 @@
 {
-  "scanned_at": "2026-11-04T17:19:55+00:00",
-  "total_records": 2205,
-  "new_records": 0,
+  "scanned_at": "2026-11-04T22:43:16+00:00",
+  "total_records": 2236,
+  "new_records": 31,
   "sources": [
     {
       "source": "Public APIs Directory",
       "status": "success",
-      "records": 2207
+      "records": 2238
     },
     {
       "source": "APIs.guru",
