@@ -1,1 +1,32 @@
-[]
+[
+  {
+    "name": "TrustLookup",
+    "category": "Email",
+    "purpose": "Verify email syntax, MX and live mailbox; detect disposable, role and catch-all addresses",
+    "documentation_url": "https://trustlookup.io/docs",
+    "spec_url": null,
+    "base_url": null,
+    "auth": "`apiKey`",
+    "pricing": "Unknown",
+    "endpoints": [],
+    "source": "Public APIs Directory",
+    "profile_status": "metadata_only",
+    "first_seen": "2026-11-11T16:14:38+00:00",
+    "last_seen": "2026-11-11T16:14:38+00:00"
+  },
+  {
+    "name": "PropRaven",
+    "category": "Open Data",
+    "purpose": "US parcel, owner and permit records for all 50 states, with an OpenAPI 3.1 spec",
+    "documentation_url": "https://propraven.com/developers",
+    "spec_url": null,
+    "base_url": null,
+    "auth": "`apiKey`",
+    "pricing": "Unknown",
+    "endpoints": [],
+    "source": "Public APIs Directory",
+    "profile_status": "metadata_only",
+    "first_seen": "2026-11-11T16:14:38+00:00",
+    "last_seen": "2026-11-11T16:14:38+00:00"
+  }
+]
